@@ -23,6 +23,6 @@ public class Event {
     private String description;
     private String imgUrl;
     private String eventUrl;
-    private Boolean remove;
+    private Boolean remote;
     private Date date;
 }
