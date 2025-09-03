@@ -56,8 +56,8 @@ public class EventService {
             return s3Client.getUrl(bucketName, fileName).toString();
 
         } catch (Exception e) {
-            System.out.println("erro ao subir arquivo");
-            return "";
+            System.out.println("erro ao subir arquivo na aws");
+            return null;
         }
     }
 
