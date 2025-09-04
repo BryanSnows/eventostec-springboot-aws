@@ -68,6 +68,23 @@ public class EventService {
                 .stream().toList();
     }
 
+    public List<EventResponseDto> getUpcomingEvents(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Event> eventPage =  this.eventRepository.findUpcomingEvents(new Date(), pageable);
+        return eventPage.map(event -> new EventResponseDto(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getDate(),
+                        "",
+                        "",
+                        event.getRemote(),
+                        event.getEventUrl(),
+                        event.getImgUrl()
+                ))
+                .stream().toList();
+    }
+
     private String uploadImg(MultipartFile multipartFile){
         String fileName = UUID.randomUUID()+ "-" + multipartFile.getOriginalFilename();
 
