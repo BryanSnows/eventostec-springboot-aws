@@ -95,8 +95,15 @@ public class EventService {
     }
 
     public List<EventResponseDto> getFiltersEvents(int page, int size, String title, String city, String uf, Date startDate, Date endDate){
+        title = (title != null) ? title : "";
+        city = (city != null) ? city : "";
+        uf = (uf != null) ? uf : "";
+        startDate = (startDate != null) ? startDate : new Date(0);
+        endDate = (endDate != null) ? endDate : new Date();
+
         Pageable pageable = PageRequest.of(page, size);
-        Page<Event> eventPage =  this.eventRepository.findFilteredEvents(new Date(), title, city, uf, startDate, endDate, pageable);
+
+        Page<Event> eventPage =  this.eventRepository.findFilteredEvents(title, city, uf, startDate, endDate, pageable);
         return eventPage.map(event -> new EventResponseDto(
                         event.getId(),
                         event.getTitle(),
