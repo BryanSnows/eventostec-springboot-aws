@@ -33,6 +33,9 @@ public class EventService {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private AddressService addressService;
+
     public Event createEvent(EventRequestDto data){
         String imgUrl = null;
 
@@ -47,7 +50,13 @@ public class EventService {
         newEvent.setDate(new Date(data.date()));
         newEvent.setImgUrl(imgUrl);
         newEvent.setRemote(data.remote());
+
         this.eventRepository.save(newEvent);
+
+        if (!data.remote()) {
+            this.addressService.createAddress(data, newEvent);
+        }
+
         return newEvent;
     }
 
@@ -76,8 +85,25 @@ public class EventService {
                         event.getTitle(),
                         event.getDescription(),
                         event.getDate(),
-                        "",
-                        "",
+                        event.getAddress() != null ? event.getAddress().getCity() : "" ,
+                        event.getAddress() != null ? event.getAddress().getUf() : "",
+                        event.getRemote(),
+                        event.getEventUrl(),
+                        event.getImgUrl()
+                ))
+                .stream().toList();
+    }
+
+    public List<EventResponseDto> getFiltersEvents(int page, int size, String title, String city, String uf, Date startDate, Date endDate){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Event> eventPage =  this.eventRepository.findFilteredEvents(new Date(), title, city, uf, startDate, endDate, pageable);
+        return eventPage.map(event -> new EventResponseDto(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getDate(),
+                        event.getAddress() != null ? event.getAddress().getCity() : "" ,
+                        event.getAddress() != null ? event.getAddress().getUf() : "",
                         event.getRemote(),
                         event.getEventUrl(),
                         event.getImgUrl()
