@@ -1,7 +1,9 @@
 package com.eventostec.api.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.event.Event;
+import com.eventostec.api.domain.event.EventDetailsDto;
 import com.eventostec.api.domain.event.EventRequestDto;
 import com.eventostec.api.domain.event.EventResponseDto;
 import com.eventostec.api.repositories.EventRepository;
@@ -20,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -35,6 +38,8 @@ public class EventService {
 
     @Autowired
     private AddressService addressService;
+    @Autowired
+    private CouponService couponService;
 
     public Event createEvent(EventRequestDto data){
         String imgUrl = null;
@@ -116,6 +121,32 @@ public class EventService {
                         event.getImgUrl()
                 ))
                 .stream().toList();
+    }
+
+    public EventDetailsDto getEventsDetails(UUID eventId){
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        List<Coupon> coupons = couponService.consultCoupons(eventId, new Date());
+
+        List<EventDetailsDto.CouponDTO> couponDtos = coupons.stream()
+                .map(coupon -> new EventDetailsDto.CouponDTO(
+                        coupon.getCode(),
+                        coupon.getDiscount(),
+                        coupon.getValid()))
+                .collect(Collectors.toList());
+
+        return new EventDetailsDto(
+                event.getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getDate(),
+                event.getAddress() != null ? event.getAddress().getCity() : "" ,
+                event.getAddress() != null ? event.getAddress().getUf() : "",
+                event.getEventUrl(),
+                event.getImgUrl(),
+                couponDtos
+        );
     }
 
     private String uploadImg(MultipartFile multipartFile){
