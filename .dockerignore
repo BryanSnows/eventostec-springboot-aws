@@ -1,0 +1,12 @@
+# Ignore build artifacts and IDE files
+target
+.git
+.idea
+.vscode
+.mvn
+.mvnw
+**/*.iml
+*.log
+.DS_Store
+**/target
+

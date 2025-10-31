@@ -1,0 +1,66 @@
+# GitLab CI pipeline for building, testing and building Docker image
+image: maven:3.9.4-eclipse-temurin-21
+
+services:
+  - docker:dind
+
+variables:
+  MAVEN_OPTS: "-Xmx1024m"
+  DOCKER_HOST: "tcp://docker:2375/"
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+  - test
+  - docker
+
+cache:
+  paths:
+    - .m2/repository
+
+build:
+  stage: build
+  script:
+    - mvn -B -DskipTests package
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1h
+
+test:
+  stage: test
+  script:
+    - mvn test
+
+docker-build:
+  stage: docker
+  image: docker:24
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: "tcp://docker:2375/"
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo "Logging in to registry (if variables provided)"
+    - if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_USER" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"; fi
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" .
+    - if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_USER" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"; fi
+  only:
+    - main
+# Multi-stage Dockerfile for building and running the Spring Boot app
+# Stage 1: build the fat jar with Maven
+FROM maven:3.9.4-eclipse-temurin-21 AS builder
+WORKDIR /workspace
+# copy everything and build
+COPY . /workspace
+RUN mvn -B -DskipTests package
+
+# Stage 2: run the jar with a small JRE image
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+# Copy the built jar from the builder stage
+COPY --from=builder /workspace/target/*.jar /app/app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+

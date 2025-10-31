@@ -25,12 +25,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+// @Service indica que essa classe é um bean de serviço gerenciado pelo Spring (componente de camada de serviço).
 public class EventService {
 
     @Value("${aws.bucket.name}")
     private String bucketName;
 
     @Autowired
+    // @Autowired injeta automaticamente uma dependência gerenciada pelo Spring no campo abaixo (por tipo).
     private AmazonS3 s3Client;
 
     @Autowired
